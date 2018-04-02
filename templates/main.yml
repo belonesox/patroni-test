@@ -1,0 +1,84 @@
+- shell:
+  args:
+    cmd: |
+        sh {{ jboss_home }}/bin/jboss-cli.sh --connect --command="/subsystem=datasources/jdbc-driver=postgres:add(driver-name="postgres",driver-module-name="org.postgresql",driver-class-name=org.postgresql.Driver)"
+  ignore_errors: yes    
+  failed_when: 0
+
+
+- shell:
+  args:
+    cmd: |
+        sh {{ jboss_home }}/bin/jboss-cli.sh --connect --command="data-source add \
+            --jndi-name=java:/comp/env/jdbc/tenant/"{{db_instance}}"DS --name="{{db_instance}}" \
+            --connection-url=jdbc:postgresql://localhost:5432/"{{db_instance}}" \
+            --driver-name=postgres --driver-class=org.postgresql.Driver --user-name="{{dbuser}}" --password="{{dbuserpass}}""
+  ignore_errors: yes    
+  failed_when: 0
+
+
+- shell:
+  args:
+    cmd: |
+        sh {{ jboss_home }}/bin/jboss-cli.sh --connect --command="data-source add \
+            --jndi-name=java:/comp/env/jdbc/TmsSecurityDS --name="TmsSecurityDS" \
+            --connection-url=jdbc:postgresql://localhost:5432/security \
+            --driver-name=postgres --driver-class=org.postgresql.Driver --user-name="tms" --password="tmsstm""
+  ignore_errors: yes    
+  failed_when: 0
+
+
+- shell:
+  args:
+    cmd: |
+        sh {{ jboss_home }}/bin/jboss-cli.sh --connect --command="data-source add \
+            --jndi-name=java:/comp/env/jdbc/AdminDS --name="AdminDS" \
+            --connection-url=jdbc:postgresql://localhost:5432/tms \
+            --driver-name=postgres --driver-class=org.postgresql.Driver --user-name="tms" --password="tmsstm""
+  ignore_errors: yes    
+  failed_when: 0
+
+
+- shell:
+  args:
+    cmd: |
+        sh {{ jboss_home }}/bin/jboss-cli.sh --connect --command="data-source add \
+            --jndi-name=java:/comp/env/jdbc/TMSDS --name="TMSDS" \
+            --connection-url=jdbc:postgresql://localhost:5432/tms \
+            --driver-name=postgres --driver-class=org.postgresql.Driver --user-name="tms" --password="tmsstm""
+  ignore_errors: yes    
+  failed_when: 0
+
+
+- shell:
+  args:
+    cmd: |
+        sh {{ jboss_home }}/bin/jboss-cli.sh --connect --command="data-source add \
+            --jndi-name=java:/comp/env/jdbc/BatchMetadataDS --name="BatchMetadataDS" \
+            --connection-url=jdbc:postgresql://localhost:5432/tms \
+            --driver-name=postgres --driver-class=org.postgresql.Driver --user-name="tms" --password="tmsstm""
+  ignore_errors: yes    
+  failed_when: 0
+
+
+- shell:
+  args:
+    cmd: |
+        sh {{ jboss_home }}/bin/jboss-cli.sh --connect --command="data-source add \
+            --jndi-name=java:/comp/env/jdbc/ExternalDS --name="ExternalDS" \
+            --connection-url=jdbc:postgresql://localhost:5432/integration \
+            --driver-name=postgres --driver-class=org.postgresql.Driver --user-name="tms" --password="tmsstm""
+  ignore_errors: yes    
+  failed_when: 0
+
+
+- shell:
+  args:
+    cmd: |
+        sh {{ jboss_home }}/bin/jboss-cli.sh --connect --command="data-source add \
+            --jndi-name=java:/comp/env/jdbc/IntegrationDS --name="IntegrationDS" \
+            --connection-url=jdbc:postgresql://localhost:5432/integration \
+            --driver-name=postgres --driver-class=org.postgresql.Driver --user-name="tms" --password="tmsstm""
+  ignore_errors: yes    
+  failed_when: 0
+

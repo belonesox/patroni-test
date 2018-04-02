@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Remotely Debug Python script
+"""
+import sys
+import os
+import subprocess
+
+def main():
+    """
+     Start procedure
+    """
+    if len(sys.argv) < 2:
+        return
+
+    ssh_client = os.environ['SSH_CLIENT']        
+    client_ip = ssh_client.split()[0]
+
+    scmd = 'pydbgp.py -d %s:9000 %s ' % (client_ip, ' '.join(sys.argv[1:]))
+    print scmd
+    os.system(scmd)
+
+if __name__ == '__main__':
+    main()

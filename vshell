@@ -1,0 +1,6 @@
+#!/bin/sh
+#export ANSIBLE_KEEP_REMOTE_FILES=1
+#SCRIPT=$1
+#shift
+ansible all --inventory-file=.vagrant/provisioners/ansible/inventory -m shell -a "$@" 
+# ansible all --inventory-file=.vagrant/provisioners/ansible/inventory -m shell -a "ls" 

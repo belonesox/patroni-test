@@ -1,0 +1,57 @@
+# The contents below (if any) are custom contents provided by the
+# Packer template during image build.
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+require 'digest'
+
+def set_network(conf)
+    start_port = (Digest::SHA256.hexdigest conf.vm.hostname)[1..4].to_i(16)+1000
+    subip = (Digest::SHA256.hexdigest conf.vm.hostname)[0..1].to_i(16) % 250 + 2
+    conf.vm.network "private_network", ip: "192.168.4.#{subip}"
+
+    preferred_interfaces = ['eth0.*', 'enp0s.*']
+    host_interfaces = %x( VBoxManage list bridgedifs | grep ^Name ).gsub(/Name:\s+/, '').split("\n")
+    network_interface_to_use = preferred_interfaces.map{ |pi| host_interfaces.find { |vm| vm =~ /#{Regexp.new(pi)}/ } }.compact[0]
+    conf.vm.network "public_network", bridge: network_interface_to_use #, adapter: "1"
+
+    python_script_4_routing = <<-PYTHON
+#!/usr/bin/env python
+import commands
+
+output = commands.getstatusoutput('ip route')
+maybedefault = output[1].splitlines()[2]
+terms = maybedefault.split()
+first = terms[0]
+last = terms[-1]
+
+output = commands.getoutput('ip -o link show')
+lastinterface = output.splitlines()[-1].split(':')[1].strip()
+if first != 'default' or last != lastinterface:
+      print "Fixing routing from %s to %s " % (last, lastinterface)
+      scmd = 'ip route add default dev %s' % lastinterface
+      commands.getstatusoutput('ip route del default')
+      commands.getstatusoutput(scmd)
+
+PYTHON
+
+    conf.vm.provision "shell", run: "always", inline: python_script_4_routing
+end
+
+Vagrant.configure(2) do |config|
+  config.vm.provider "virtualbox" do |conf|
+    conf.gui = false
+    conf.memory = "4096" 
+    conf.cpus = 2
+  end
+
+  config.vm.network "forwarded_port", guest: 80,   host: 1090
+  config.vm.network "forwarded_port", guest: 8000, host: 2800
+  config.vm.network "forwarded_port", guest: 9990, host: 2090
+  config.vm.network "forwarded_port", guest: 9999, host: 2099
+  config.vm.hostname = "tms"
+  set_network(config)      
+  config.vm.synced_folder '.', '/vagrant', disabled: true
+
+end
+

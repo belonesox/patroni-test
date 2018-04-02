@@ -1,0 +1,6 @@
+#!/bin/sh
+#export ANSIBLE_KEEP_REMOTE_FILES=1
+SCRIPT=$1
+shift
+ansible-playbook -vvv $SCRIPT --inventory-file=hosts/local-tms-cluster.ini  --ask-pass --ask-sudo-pass  -v  $@ 
+

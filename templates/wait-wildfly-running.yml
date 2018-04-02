@@ -1,0 +1,7 @@
+- shell:
+  args:
+    cmd: |
+            until sh bin/jboss-cli.sh --connect --command=':read-attribute(name=server-state)' | grep '"result" => "running"'; do
+                sleep 1
+            done
+    chdir: '{{ jboss_home }}'            

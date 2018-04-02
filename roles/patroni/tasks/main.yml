@@ -1,0 +1,97 @@
+- name: patroni
+  debug: msg="patroni"
+
+- include: templates/put_my_etc.yml
+
+- shell: "consul join {{item}}"
+  with_items: "{{ groups['local_vm'] }}"
+  failed_when: no
+  ignore_errors: yes
+
+- firewalld: zone=public port={{item}}/tcp permanent=true state=enabled
+  with_items:
+  - 5432
+  - "{{haproxy_port}}"
+  - 8008
+  
+- service: name=firewalld  state=restarted
+
+- ini_file:
+    dest: /etc/yum.repos.d/CentOS-Base.repo
+    section: "{{item}}"
+    option: exclude
+    value: postgresql*
+  with_items:
+    - base
+    - updates  
+
+- yum:
+    name: https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/pgdg-redhat96-9.6-3.noarch.rpm
+    state: present
+
+- name: patroni-packages
+  yum: name="{{item}}" state=latest
+  with_items:
+    - repmgr96
+    - haproxy
+    - keepalived
+    - python-pip
+    - python-psutil
+    - python-psycopg2
+    - postgresql96-server 
+    - postgresql96-contrib
+    - postgis24_96
+
+- pip: name="{{item}}"
+  with_items:
+    - python-etcd
+    - python-consul
+    - dnspython
+    - boto
+    - mock
+    - requests
+    - six
+    - kazoo
+    - click
+    - tzlocal
+    - prettytable
+    - PyYAML
+    - python-dateutil    
+    - psutil 
+    - cdiff
+
+# - name: checkout patroni
+#   git: repo=https://github.com/belonesox/patroni.git dest=/opt/patroni force=yes
+
+- name: Upgrade pip
+  pip:
+    name: "{{item}}"
+    extra_args: --upgrade
+  with_items:
+    - setuptools
+    - pip
+
+- pip: name='kazoo' version="2.2.1"
+- pip: name='git+https://github.com/belonesox/patroni.git'  editable=false extra_args="--force-reinstall --no-deps --ignore-installed"
+
+# - name: put postgres.yml
+#   template: src=postgres.yml.j2 dest=/etc/patroni/postgres.yml backup=yes
+  
+- name: put patroni.service systemd unit
+  template: src=patroni.service dest=/lib/systemd/system/patroni.service backup=yes
+  
+- name: Reload daemon definitions
+  command: /usr/bin/systemctl daemon-reload
+  
+- service: name="{{item}}" state=restarted enabled=yes
+  with_items:
+  - keepalived
+  - haproxy
+  - patroni
+
+
+- service: name="{{item}}" state=started
+  with_items:
+  - keepalived
+
+

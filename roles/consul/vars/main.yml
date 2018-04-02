@@ -1,0 +1,41 @@
+# Pure internal helper variables
+
+_consul_lan_servers: "\
+  {% set __consul_lan_servers = [] %}\
+  {% for server in consul_servers %}\
+    {% set _consul_datacenter = hostvars[server]['consul_datacenter'] | default('dc1', true) %}\
+    {% if _consul_datacenter == consul_datacenter %}\
+      {% if __consul_lan_servers.append(server) %}{% endif %}\
+    {% endif %}\
+  {% endfor %}\
+  {{ __consul_lan_servers }}"
+
+_consul_wan_servers: "\
+  {% set __consul_wan_servers = [] %}\
+  {% for server in consul_servers %}\
+    {% set _consul_datacenter = hostvars[server]['consul_datacenter'] | default('dc1', true) %}\
+    {% if _consul_datacenter != consul_datacenter %}\
+      {% if __consul_wan_servers.append(server) %}{% endif %}\
+    {% endif %}\
+  {% endfor %}\
+  {{ __consul_wan_servers }}"
+
+_consul_bootstrap_servers: "\
+  {% set __consul_bootstrap_servers = [] %}\
+  {% for server in _consul_lan_servers %}\
+    {% set _consul_node_role = hostvars[server]['consul_node_role'] | default('client', true) %}\
+    {% if _consul_node_role == 'bootstrap' %}\
+      {% if __consul_bootstrap_servers.append(server) %}{% endif %}\
+    {% endif %}\
+  {% endfor %}\
+  {{ __consul_bootstrap_servers }}"
+_consul_bootstrap_server: "{{ _consul_bootstrap_servers[0] }}"
+
+# Default Ports Used
+_consul_default_port_rpc: "{% if consul_version | version_compare('0.8', '<') %}8400{% endif %}" # Deprecated with version 0.8
+_consul_default_port_https: "-1" # Defaults to disabled
+_consul_default_port_http: "8500"
+_consul_default_port_dns: "8600"
+
+consul_bind_address_real: "0.0.0.0"
+#consul_raw_key: "70SGtkKMXAvm7TLb1z6VqA=="

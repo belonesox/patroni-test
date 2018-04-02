@@ -1,0 +1,43 @@
+- yum: name=libselinux-python
+- selinux: state=disabled
+  ignore_errors: True    
+
+- name: Put keys to server
+  include: templates/authorize_me.yml 
+  check_mode: no
+
+- replace: dest=/etc/yum.conf regexp='^keepcache\s*=\s*[^\n]+' replace='keepcache=1' backup=no  
+  when: debug
+
+- name: epel
+  yum: name=https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm state=present  validate_certs=no
+
+- name: postgres
+  yum: name=https://download.postgresql.org/pub/repos/yum/9.5/redhat/rhel-7-x86_64/pgdg-centos95-9.5-3.noarch.rpm state=present
+
+# - name: centos-release-scl-rh
+#   yum: name=centos-release-scl-rh state=present
+
+
+
+- name: base packages 
+  yum: name={{item}} state=latest
+  with_items:
+    - wget
+    - git
+    - zip
+    - unzip
+    - mc
+    - ack
+    - python-lxml
+    - htop
+    - yum-utils
+
+- yum: name=http://rpms.famillecollet.com/enterprise/remi-release-7.rpm state=present
+- shell: yum-config-manager --enable remi
+- shell: yum-config-manager --enable remi-php70
+
+- name: override default /etc from our templates
+  include: templates/put_my_etc.yml
+
+

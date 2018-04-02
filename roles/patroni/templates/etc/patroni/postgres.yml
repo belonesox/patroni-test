@@ -1,0 +1,63 @@
+name: {{ inventory_hostname }}
+scope: &scope {{ patroni_scope }}
+
+consul:
+  host: localhost:8500
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: {{ private_ip_address }}:8008
+  auth: 'username:{{ patroni_rest_password }}'
+
+bootstrap: 
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    maximum_lag_on_failover: 10485760 # 1 megabyte in bytes
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+        archive_mode: "on"
+        wal_level: hot_standby
+        archive_command: "true"
+        max_wal_senders: 5
+        wal_keep_segments: 8
+        archive_timeout: 1800s
+        max_replication_slots: 5
+        hot_standby: "on"
+        wal_log_hints: "on"
+        log_filename: postgresql-%u
+        log_line_prefix: '%t [%p]: [%l-1] %c %x %d %u %a %h '
+        log_lock_waits: 'on'
+        log_min_duration_statement: 500
+        log_rotation_age: 1440
+        log_statement: ddl
+        log_temp_files: 0
+        log_truncate_on_rotation: true
+
+pg_hba:  # Add following lines to pg_hba.conf after running 'initdb'
+  - host replication replicator 192.168.0.0/16 md5
+  - host all all 0.0.0.0/0 md5
+      
+postgresql:
+  listen: 0.0.0.0:5432  
+  connect_address: {{ private_ip_address }}:5432
+  data_dir: /var/lib/pgsql/9.6/data
+  pg_rewind:
+    username: superuser
+    password: {{ patroni_postgres_password }}
+  pg_hba:
+  - host all all 0.0.0.0/0 md5
+  - host replication replicator 0.0.0.0/0 md5
+  replication:
+    username: replicator
+    password: {{ patroni_replicator_password }}
+    network:  192.168.0.0/16
+  superuser:
+    username: superuser
+    password: {{ patroni_postgres_password }}
+  admin:
+    username: admin
+    password: {{ patroni_postgres_password }}
+  restore: /opt/patroni/patroni/scripts/wale_restore.py

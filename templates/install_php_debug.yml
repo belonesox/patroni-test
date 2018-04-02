@@ -1,0 +1,26 @@
+- yum: name={{item}}
+  with_items:
+    - php-pecl-xdebug
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'     
+
+- apt: name={{item}}
+  with_items:
+    - php-xdebug
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'     
+
+- setup:
+- debug: msg='{{ansible_env}}'
+- shell: echo "******"
+- shell: echo $SSH_CLIENT
+- shell: echo "------"
+
+- ini_file: dest=/etc/php/7.0/mods-available/xdebug.ini section=xdebug  option={{item.option}} value={{item.value}}
+  with_items:
+  - {option: 'xdebug.remote_enable',         value: '1'}
+  - {option: 'xdebug.remote_handler',        value: 'dbgp'}
+  - {option: 'xdebug.remote_autostart',      value: '1'}
+  - {option: 'xdebug.remote_host',           value: '{{ssh_client}}'}
+  - {option: 'xdebug.remote_mode',           value: 'req'}
+  - {option: 'xdebug.remote_port ',          value: '9000'}
+  - {option: 'xdebug.show_exception_trace',  value: '0'}
+  - {option: 'xdebug.remote_log',            value: '/tmp/xdebug.log'}

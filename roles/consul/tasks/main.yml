@@ -1,0 +1,165 @@
+# - name: Install netaddr dependency locally
+#   pip:
+#     name: netaddr
+#   delegate_to: 127.0.0.1
+#   become: false
+
+# - service:
+#     name: consul
+#     state: stopped
+
+# - shell: "rm -rf /var/consul/*"
+
+- yum: name="{{item}}"
+  with_items:
+    - jq
+    - bind-utils
+    - net-tools
+
+- service: name=firewalld state=started enabled=true
+
+- firewalld: zone=public port={{item}}/tcp permanent=true state=enabled
+  with_items:
+  - 22
+  - 8300
+  - 8301
+  - 8302
+  - 8500
+
+- service: name=firewalld  state=restarted
+
+- name: Checks/asserts
+  include: asserts.yml
+
+- name: Include OS-specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+
+# Gathers facts (bind address) from servers not currently targeted.
+# 'delegate_facts' is currently rather buggy in Ansible so this might not
+# always work. Hence 'consul_gather_server_facts' defaults to 'no'.
+- name: Gather facts from other servers
+  setup:
+  delegate_to: "{{ item }}"
+  delegate_facts: True
+  with_items: "{{ consul_servers | difference(play_hosts) }}"
+  ignore_errors: yes
+  when: consul_gather_server_facts | bool
+
+- name: Expose bind_address, datacenter and node_role as facts
+  set_fact:
+    consul_bind_address: "{{ consul_bind_address }}"
+    consul_datacenter: "{{ consul_datacenter }}"
+    consul_node_role: "{{ consul_node_role }}"
+
+
+- name: Read bootstrapped state
+  stat:
+    path: "{{ consul_bootstrap_state }}"
+  register: bootstrap_state
+  ignore_errors: true
+
+- name: Include user and group settings
+  include: user_group.yml
+
+- name: Include directory settings
+  include: dirs.yml
+
+- name: Check for existing Consul binary
+  stat:
+    path: "{{ consul_binary }}"
+  register: consul_binary_installed
+
+- name: Calculate whether to install consul binary
+  set_fact:
+    consul_install_binary: "{{ consul_install_upgrade or not consul_binary_installed.stat.exists }}"
+
+- name: Install OS packages and consul - locally
+  include: install.yml
+  when:
+    - consul_install_binary | bool
+    - not consul_install_remotely | bool
+
+- name: Install OS packages and consul - remotely
+  include: install_remote.yml
+  when:
+    - consul_install_binary | bool
+    - consul_install_remotely | bool
+
+# XXX: Individual gossip tasks are deprecated and need to be removed
+# - include: ../tasks/encrypt_gossip.yml
+
+# - name: Create Consul configuration
+#   include: config.yml
+
+- name: Create ACL configuration
+  include: acl.yml
+  when: consul_acl_enable | bool
+
+- name: Create TLS configuration
+  include: tls.yml
+  when: consul_tls_enable | bool
+
+- block:
+  # - name: Create Debian init script
+  #   template:
+  #     src: consul_debianinit.j2
+  #     dest: /etc/init.d/consul
+  #     owner: root
+  #     group: root
+  #     mode: 0755
+  #   when:
+  #     - not ansible_service_mgr == "systemd"
+  #     - ansible_os_family == "Debian"
+  #     - not ansible_os_family == "FreeBSD"
+  #     - not ansible_os_family == "Solaris"
+
+  - name: Create systemd script
+    template:
+      src: consul_systemd.service.j2
+      dest: /lib/systemd/system/consul.service
+      owner: root
+      group: root
+      mode: 0644
+    when:
+      - ansible_service_mgr == "systemd"
+      - not ansible_os_family == "FreeBSD"
+      - not ansible_os_family == "Solaris"
+
+  - include: templates/put_my_etc.yml
+  
+  - name: start-consul
+    service:
+      name: consul
+      state: started
+      enabled: yes
+
+  # - name: Check Consul HTTP API (via TCP socket)
+  #   wait_for:
+  #     delay: 15
+  #     port: "{{consul_ports.http|int}}"
+  #     host: "{{ consul_addresses.http }}"
+  #   when: (consul_ports.http|int > -1) and (consul_addresses.http|ipaddr)
+
+  # - name: Check Consul HTTP API (via unix socket)
+  #   wait_for:
+  #     delay: 15
+  #     path: "{{ consul_addresses.http | replace('unix://', '', 1) }}"
+  #   when: consul_addresses.http | match("unix://*")
+
+  # - name: Create bootstrapped state file
+  #   file:
+  #     dest: "{{ consul_bootstrap_state }}"
+  #     state: touch
+
+  - include: ../tasks/dnsmasq.yml
+    when: consul_dnsmasq_enable | bool
+
+  - include: ../tasks/iptables.yml
+    when: consul_iptables_enable | bool
+
+  - include: ../tasks/client.yml
+    when:
+      - consul_node_role == "client"
+      - ansible_os_family == "Debian"
+  when: yes
+  # when: not bootstrap_state.stat.exists

@@ -1,0 +1,13 @@
+---
+- hosts: patroni-testing-cluster      
+  become: true
+  # tasks:
+  #    - debug: msg="**{{hostvars[inventory_hostname]['ansible_all_ipv4_addresses'][2]}}--"
+  roles:
+    - { role: common-centos, when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux' }    
+    - info
+    - debug-common
+    - consul 
+    - patroni
+
+    

@@ -1,0 +1,17 @@
+- shell: PGPASSWORD="{{dbuserpass}}" psql -U "{{dbuser}}" --host {{db_host}} "{{wars_to_upload_to_databases[item]['db']}}" -qAtwc "\d"
+  register: tables_in_db
+
+
+- block:
+  - debug: msg="DB {{wars_to_upload_to_databases[item]['db']}} -- ***** {{tables_in_db}}----"  
+  - template: 
+      src:  install_db.sh
+      dest: "/tmp/install_db_{{item}}.sh"
+
+  - shell:
+    args:
+      chdir: "{{tms_release_remote_dir}}"
+      cmd: "sh /tmp/install_db_{{item}}.sh"
+  when: tables_in_db.stdout.find('patch_state') == -1
+
+

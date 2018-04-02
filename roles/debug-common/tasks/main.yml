@@ -1,0 +1,29 @@
+
+- apt: name={{item}} update_cache=yes
+  with_items:
+    - python-pip
+    - libxml2-utils
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'     
+
+
+- yum: name={{item}} update_cache=yes
+  with_items:
+    - python-pip
+    - xauth
+    - dejavu-lgc-sans-fonts
+    # - libxml2-utils
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'     
+
+
+- pip: name={{item}}
+  with_items:
+    - setuptools
+    - pip
+    - dbgp
+
+- template: src=pyd dest=/usr/bin/pyd
+- file:     path=/usr/bin/pyd  mode="u=rwx,o=rx"
+- template: src=nod dest=/usr/bin/nod
+- file:     path=/usr/bin/nod  mode="u=rwx,o=rx"
+
+

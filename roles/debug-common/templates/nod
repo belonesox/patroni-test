@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Remotely Debug NodeJS script
+"""
+import sys
+import os
+import subprocess
+
+def main():
+    """
+     Start procedure
+    """
+    if len(sys.argv) < 2:
+        return
+
+    ssh_client = os.environ['SSH_CLIENT']        
+    client_ip = ssh_client.split()[0]
+
+    scmd = ' /usr/bin/node /usr/bin/node-dbgp -h %s -p 9000 %s' % (client_ip, ' '.join(sys.argv[1:]))
+    print scmd
+    os.system(scmd)
+
+if __name__ == '__main__':
+    main()

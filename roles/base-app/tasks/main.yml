@@ -1,0 +1,11 @@
+- name: app_packages4ubuntu 
+  apt: name={{item}} update_cache=yes
+  with_items: "{{tms_app_packages}}"
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: app_packages4centos 
+  yum: name={{item}} 
+  with_items: "{{tms_app_packages}}"
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+
+  

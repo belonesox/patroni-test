@@ -1,0 +1,74 @@
+---
+# File: install.yml - package installation tasks for Consul
+
+- name: Install OS packages
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ consul_os_packages }}"
+  tags: installation
+
+- name: Read package checksum file
+  local_action: stat path="{{ role_path }}/files/consul_{{ consul_version }}_SHA256SUMS"
+  become: no
+  run_once: true
+  register: consul_checksum
+  tags: installation
+
+- name: Download package checksum file
+  local_action: get_url url="{{ consul_checksum_file_url }}" dest="{{ role_path }}/files/consul_{{ consul_version }}_SHA256SUMS"
+  become: no
+  run_once: true
+  tags: installation
+  when: not consul_checksum.stat.exists | bool
+
+- name: Read package checksum
+  local_action: shell grep "{{ consul_pkg }}" "{{ role_path }}/files/consul_{{ consul_version }}_SHA256SUMS" | awk '{print $1}'
+  become: no
+  run_once: true
+  register: consul_sha256
+  tags: installation
+
+- name: Check Consul package file
+  local_action: stat path="{{ role_path }}/files/{{ consul_pkg }}"
+  become: no
+  run_once: true
+  register: consul_package
+  tags: installation
+
+- name: Download Consul package
+  local_action: get_url url="{{ consul_zip_url }}" dest="{{ role_path }}/files/{{ consul_pkg }}" checksum="sha256:{{ consul_sha256.stdout }}" timeout="42"
+  become: no
+  run_once: true
+  tags: installation
+  when: not consul_package.stat.exists | bool
+
+- name: Unarchive Consul package
+  local_action: unarchive src="{{ role_path }}/files/{{ consul_pkg }}" dest="{{ role_path }}/files/" creates="{{ role_path }}/files/consul"
+  become: no
+  run_once: true
+  tags: installation
+
+- name: Install Consul
+  copy:
+    src: "{{ role_path }}/files/consul"
+    dest: "{{ consul_bin_path }}/consul"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+    mode: 0755
+  tags: installation
+
+- name: Daemon reload systemd in case the binaries upgraded
+  command: systemctl daemon-reload
+  become: yes
+  notify: restart consul
+  when:
+    - ansible_service_mgr == "systemd"
+    - consul_install_upgrade
+
+- name: Cleanup
+  local_action: file path="{{ item }}" state="absent"
+  become: no
+  with_fileglob: "{{ role_path }}/files/consul"
+  run_once: true
+  tags: installation

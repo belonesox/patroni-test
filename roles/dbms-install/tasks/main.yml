@@ -1,0 +1,55 @@
+- name: db_packages4ubuntu 
+  apt: name={{item}} update_cache=yes
+  with_items: "{{tms_db_packages}}"
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: db_packages4centos 
+  yum: name={{item}} 
+  with_items: "{{tms_db_packages}}"
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+
+
+- name: Initiate database
+  command: /usr/pgsql-9.6/bin/initdb -D "{{postgresql_conf_dir}}"
+           creates="{{postgresql_conf_dir}}/postgresql.conf"
+  become: true
+  become_user: postgres         
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+
+- name: shmmax
+  shell: cat /proc/sys/kernel/shmmax
+  register: postgresql_server_register_sysctl_shmmax
+  changed_when: False
+
+- template: 
+    src: postgresql/{{item}}
+    dest: "{{postgresql_conf_dir}}/{{item}}"
+  with_items:
+    - postgresql.conf
+    - pg_hba.conf
+
+- service: name="{{postgresql_service_name}}" state=restarted
+
+- postgresql_user: name="superuser" password="{{patroni_postgres_password}}" role_attr_flags="CREATEDB,CREATEROLE,SUPERUSER"
+  become: yes
+  become_user: postgres
+
+# - block:
+#   - postgresql_user: name="{{dbuser}}" password="{{dbuserpass}}" login_user=postgres
+#   - postgresql_user: name="root" password="root" role_attr_flags=SUPERUSER login_user=postgres
+
+#   - postgresql_db: name="{{ item }}" owner="{{dbuser}}" login_user=postgres encoding=UTF8 
+#     with_items:
+#       - "{{ dbname }}"
+#   become: yes
+#   become_user: postgres
+
+# - postgresql_ext:
+#     name: pgcrypto
+#     db: "{{dbname}}"
+#   become: yes
+#   become_user: postgres
+
+
+
+

@@ -1,0 +1,25 @@
+- file:
+    path: /etc/{{ item.path }}
+    state: directory
+  with_filetree: ../templates/etc/
+  when: item.state == 'directory'    
+
+   
+- template:
+    src: "{{ item.src }}"
+    dest: /etc/{{ item.path }}
+    force: yes
+  with_filetree: ../templates/etc/
+  when: item.state == 'file'    
+
+
+# | to_nice_json
+- copy: content={{lookup("template", "templates/etc/{{ item.path }}") | to_nice_json }} dest=/etc/{{ item.path }}  force=yes
+# - copy: content={{lookup("template", "templates/etc/{{ item.path }}") | regex_replace('/\*[^*]*\*/', '') }} dest=/etc/{{ item.path }}  force=yes
+  with_filetree: "../templates/etc/"
+  when: item.state == 'file' and item.path.endswith('.json')
+
+  
+
+
+

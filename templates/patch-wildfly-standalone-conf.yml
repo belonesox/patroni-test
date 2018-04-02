@@ -1,0 +1,24 @@
+- name: wildfly-shmmax
+  shell: cat /proc/sys/kernel/shmmax
+  register: wildfly_sysctl_shmmax
+  changed_when: False
+
+
+- lineinfile:
+      dest: "{{jboss_home}}/bin/standalone.conf"
+      state: present
+      regexp: 'JAVA_OPTS="\$JAVA_OPTS {{item[:4]}}\w*"'
+      line: 'JAVA_OPTS="$JAVA_OPTS {{ item }}"'
+  with_items: "{{java_start_extra_options}}"
+
+- lineinfile:
+      dest: "{{jboss_home}}/bin/standalone.conf"
+      state: absent
+      regexp: 'XX:MetaspaceSize'
+
+- lineinfile:
+      dest: "{{jboss_home}}/bin/standalone.conf"
+      state: present
+      regexp: 'JAVA_OPTS=\"\$JAVA_OPTS {{item.split("=")[0]}}=[^\"]*\"'
+      line: 'JAVA_OPTS="$JAVA_OPTS {{ item }}"'
+  with_items: "{{java_start_environment_vars}}"

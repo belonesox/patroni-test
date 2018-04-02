@@ -1,0 +1,119 @@
+- xml:
+      path: "{{jboss_home}}/standalone/configuration/standalone.xml"
+      xpath: '{{item.path}}'
+      namespaces: "{{wildfly_standalone_xml_namespaces}}"
+      value: "{{item.value}}"
+  with_items:
+      - path: '/jboss:server/jboss:profile/keycloak:subsystem/keycloak:spi[@name="userSessions"]/keycloak:default-provider'
+        value: 'tms-user-session'
+      - path: '/jboss:server/jboss:profile/keycloak:subsystem/keycloak:spi[@name="userSessions"]/keycloak:provider[@name="tms-user-session" and @enabled="true"]/keycloak:properties/keycloak:property[@name="dataSource" and @value="java:/comp/env/jdbc/TmsSecurityDS"]'
+        value: ''
+      - path: '/jboss:server/jboss:profile/keycloak:subsystem/keycloak:theme/keycloak:cacheThemes'
+        value: 'false'
+      - path: '/jboss:server/jboss:profile/keycloak:subsystem/keycloak:theme/keycloak:cacheTemplates'
+        value: 'false'
+#      - path: '/jboss:server/jboss:interfaces/jboss:interface[@name="public"]/jboss:any-address'
+#        value: ''
+
+
+
+- name: Setting attribute values for standalone.xml
+  xml:
+      path: "{{jboss_home}}/standalone/configuration/standalone.xml"
+      xpath: '{{item.path}}'
+      attribute: '{{item.attribute}}'
+      value: '{{item.value}}'
+      namespaces: "{{wildfly_standalone_xml_namespaces}}"
+  with_items:
+      - path: '/jboss:server/jboss:interfaces/jboss:interface[@name="management"]/jboss:inet-address'
+        attribute: 'value'
+        value: '${jboss.bind.address.management:0.0.0.0}'
+      - path: '/jboss:server/jboss:interfaces/jboss:interface[@name="unsecure"]/jboss:inet-address'
+        attribute: 'value'
+        value: '${jboss.bind.address.unsecure:0.0.0.0}'
+      - path: '/jboss:server/jboss:profile/keycloak:subsystem/keycloak:spi[@name="connectionsJpa"]/keycloak:provider[@name="default" and @enabled="true"]/keycloak:properties/keycloak:property[@name="dataSource"]'
+        attribute: 'value'
+        value: 'java:/comp/env/jdbc/TmsSecurityDS'
+
+                # <datasource jta="true" jndi-name="java:/comp/env/jdbc/IntegrationMQDS" pool-name="IntegrationMQDS" enabled="true" use-ccm="true">
+                #     <connection-url>jdbc:postgresql://localhost:5432/integration_mq</connection-url>
+                #     <driver-class>org.postgresql.Driver</driver-class>
+                #     <driver>postgres</driver>
+                #     <security>
+                #         <user-name>tms</user-name>
+                #         <password>tmsstm</password>
+                #     </security>
+
+
+
+
+      - path: '/jboss:server/jboss:socket-binding-group/jboss:socket-binding[@name="management-native"]'
+        attribute: 'interface'
+        value: 'management'
+      - path: '/jboss:server/jboss:socket-binding-group/jboss:socket-binding[@name="management-native"]'
+        attribute: 'port'
+        value: '9999'
+      - path: '/jboss:server/jboss:socket-binding-group/jboss:socket-binding[@name="management-native"]'
+        attribute: 'fixed-port'
+        value: 'false'
+      - path: '/jboss:server/jboss:socket-binding-group/jboss:socket-binding[@name="proxy-https"]'
+        attribute: 'port'
+        value: '443'
+      - path: '/jboss:server/jboss:management/jboss:management-interfaces/jboss:native-interface/jboss:socket-binding'
+        attribute: 'native'
+        value: 'management-native'
+      - path: '/jboss:server/jboss:profile/undertow:subsystem/undertow:server[@name="default-server"]/undertow:http-listener'
+        attribute: 'read-timeout'
+        value: '600000'
+      - path: '/jboss:server/jboss:profile/undertow:subsystem/undertow:server[@name="default-server"]/undertow:https-listener'
+        attribute: 'read-timeout'
+        value: '600000'
+      - path: '/jboss:server/jboss:profile/undertow:subsystem/undertow:server[@name="default-server"]/undertow:http-listener'
+        attribute: 'max-post-size'
+        value: '104857600'
+      - path: '/jboss:server/jboss:profile/undertow:subsystem/undertow:server[@name="default-server"]/undertow:https-listener'
+        attribute: 'max-post-size'
+        value: '104857600'
+      - path: '/jboss:server/jboss:profile/deployment:subsystem/deployment:deployment-scanner'
+        attribute: 'deployment-timeout'
+        value: '1800'
+
+
+- xml:
+      path: "{{jboss_home}}/standalone/configuration/standalone.xml"
+      xpath: '{{item}}'
+      ensure: absent
+      namespaces: "{{wildfly_standalone_xml_namespaces}}"
+  with_items:
+    - '/jboss:server/jboss:profile/logging:subsystem/logging:periodic-size-rotating-file-handler[@name="KEYCLOAK"]'
+    - '/jboss:server/jboss:profile/logging:subsystem/logging:logger[@category="org.keycloak"]'
+
+- xml:
+      path: "{{jboss_home}}/standalone/configuration/standalone.xml"
+      xpath: '/jboss:server/jboss:profile/logging:subsystem'
+      input_type: xml
+      namespaces: "{{wildfly_standalone_xml_namespaces}}"
+      add_children:
+        - >
+            <periodic-size-rotating-file-handler name="KEYCLOAK" autoflush="true">
+              <formatter>
+                  <named-formatter name="PATTERN"/>
+              </formatter>
+              <file relative-to="jboss.server.log.dir" path="keycloak.log"/>
+              <suffix value=".yyyy-MM-dd"/>
+              <append value="true"/>
+              <rotate-size value="5m"/> 
+              <max-backup-index value="7"/>
+            </periodic-size-rotating-file-handler>
+        - >     
+            <logger category="org.keycloak">
+                <level name="TRACE"/>
+                <handlers>
+                    <handler name="KEYCLOAK"/>
+                </handlers>
+            </logger>
+
+
+
+
+

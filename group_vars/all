@@ -1,0 +1,48 @@
+postgresql_client_package: '{{ "postgresql"  if (ansible_distribution == "Debian" or ansible_distribution == "Ubuntu") else "postgresql96" }}' 
+postgresql_service_name: '{{ "postgresql"  if (ansible_distribution == "Debian" or ansible_distribution == "Ubuntu") else "postgresql-9.6" }}'  
+postgresql_server_package: '{{ "postgresql"  if (ansible_distribution == "Debian" or ansible_distribution == "Ubuntu") else "postgresql96-server" }}' 
+
+
+postgresql_server_version: '{{ "9.6"  if (ansible_distribution == "Debian" or ansible_distribution == "Ubuntu") else "9.6" }}' 
+
+
+############## Настройки баз данных #######################3
+db_instance: demo
+dbname: tms
+dbuser: tms
+dbuserpass: tmsstm
+db_host: localhost
+
+
+
+postgresql_conf_dir: '{{ "/etc/postgresql/" ~ postgresql_server_version ~"/main/"  if (ansible_distribution == "Debian" or ansible_distribution == "Ubuntu") else "/var/lib/pgsql/9.6/data/" }}' 
+
+
+consul_node_role: '{{ "bootstrap" if (db_server_index==1) else "server" }}' 
+consul_group_name: "patroni-testing-cluster"
+
+
+patroni_scope: cluster-test-pgsql
+patroni_rest_password: password1729
+patroni_postgres_password: password1729
+patroni_replicator_password: password1729
+
+debug: no
+
+private_ip_address: "{{hostvars[inventory_hostname]['ansible_all_ipv4_addresses'][0]}}"
+
+# pg_cluster_prefix_names: "patroni-testing"
+pg_cluster_count: 3
+
+
+
+haproxy_port: "3306"
+dbhost: '{{ virtual_ip_for_keepalived if (cluster_mode is defined) else "127.0.0.1"}}'
+dbport: '{{ haproxy_port if (cluster_mode is defined) else "5432"}}'
+
+
+consul_datacenter: 'patroni-testing-dc-vagrant'
+consul_domain: 'patroni-testing-dc-vagrant-01'
+#pg_cluster_prefix_names: "patroni-testing"
+consul_raw_key: "cLAsMNEM5kDmDSx6ISzQrw=="
+consul_interface_number: 2

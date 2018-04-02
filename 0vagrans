@@ -1,0 +1,7 @@
+#!/bin/sh
+export ANSIBLE_KEEP_REMOTE_FILES=1
+SCRIPT=$1
+shift
+#ansible-playbook $SCRIPT --inventory-file=.vagrant/provisioners/ansible/inventory  --ask-pass  -vvv  $@ 
+ansible-playbook $SCRIPT --inventory-file=.vagrant/provisioners/ansible/inventory   $@ 
+

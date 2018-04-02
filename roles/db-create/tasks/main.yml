@@ -1,0 +1,30 @@
+- apt: name="{{item}}"
+  with_items:
+    - python-psycopg2
+    - postgresql-client
+
+- name: "ttt"
+  debug: msg="dbhost={{dbhost}}"
+
+- name: "ttt2"
+  debug: msg="dbport={{dbport}}"
+
+- postgresql_db: name="superuser" owner="superuser" login_user="superuser" login_host="{{dbhost}}" port="{{dbport}}" login_password="{{patroni_postgres_password}}" encoding=UTF8 
+- postgresql_user: name="{{dbuser}}" password="{{dbuserpass}}" login_user="superuser"  login_host="{{dbhost}}" port="{{dbport}}" login_password="{{patroni_postgres_password}}"
+- postgresql_db: name="{{item}}" owner="{{dbuser}}" login_user="superuser" login_host="{{dbhost}}" port="{{dbport}}" login_password="{{patroni_postgres_password}}" encoding=UTF8 
+  with_items:
+    - "{{dbname}}"
+
+
+# - postgresql_user: name="root" password="root" role_attr_flags=SUPERUSER login_user="superuser" login_host="{{virtual_ip_for_keepalived}}" login_password="{{patroni_postgres_password}}"
+
+- postgresql_ext: name=pgcrypto db="{{dbname}}" login_user="superuser"  login_host="{{dbhost}}" port="{{dbport}}" login_password="{{patroni_postgres_password}}" 
+# - name: pgcrypto
+#   shell: PGPASSWORD="{{dbuserpass}}" psql -U "{{dbuser}}" --host "{{virtual_ip_for_keepalived}}" "{{dbname}}" -qAtwc "CREATE EXTENSION pgcrypto;"
+
+    
+
+# - include: templates/install_db.yml
+#   with_items: "{{wars_to_upload_to_databases}}"
+
+
