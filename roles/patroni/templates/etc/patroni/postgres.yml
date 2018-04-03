@@ -3,6 +3,7 @@ scope: &scope {{ patroni_scope }}
 
 consul:
   host: localhost:8500
+  checks: [] 
 
 restapi:
   listen: 0.0.0.0:8008
@@ -22,7 +23,7 @@ bootstrap:
         wal_level: hot_standby
         archive_command: "true"
         max_wal_senders: 5
-        wal_keep_segments: 8
+        wal_keep_segments: 4000
         archive_timeout: 1800s
         max_replication_slots: 5
         hot_standby: "on"

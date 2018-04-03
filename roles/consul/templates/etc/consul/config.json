@@ -76,7 +76,7 @@
         "ui": {{ consul_ui | bool | to_json }},
 
         
-    "server": {{ (consul_node_role != 'client') | bool | to_json }},
+    "server": false,
     "bootstrap": false,
     "bootstrap_expect": {{ groups[consul_group_name] | length }},
 }
