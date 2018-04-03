@@ -22,6 +22,8 @@ tmux split-window -d -t 1 -v -p 50
 # tmux send-keys -t 1 "watch -n 1 ssh root@10.200.5.101 'consul operator raft --list-peers'" Enter
 # tmux send-keys -t 2 "watch -n 1 ssh root@$MASTER_IP 'patronictl -c /etc/patroni/postgres.yml list cluster-test-pgsql'" Enter
 
+watch -n 1 ssh root@10.200.5.101 'patronictl -c /etc/patroni/postgres.yml list cluster-test-pgsql'" Enter
+
 tail -f  /var/lib/pgsql/9.6/data/pg_log/postgresql-Mon.log
 
 tmux select-pane -t 0

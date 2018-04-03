@@ -18,7 +18,7 @@ bootstrap:
       use_pg_rewind: true
       use_slots: true
       parameters:
-        archive_mode: "on"
+        archive_mode: "off"
         wal_level: hot_standby
         archive_command: "true"
         max_wal_senders: 5
