@@ -3,4 +3,5 @@
 ./oshell "systemctl stop patroni"
 ./oshell "systemctl stop consul"
 ./oshell "rm -rf /var/consul/*"
-./oshell "rm -rf /var/lib/pgsql/9.6/"
+#./oshell "systemctl stop consul"
+#./oshell "rm -rf /var/lib/pgsql/9.6/"

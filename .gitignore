@@ -31,7 +31,5 @@ to_delete
 *.tfstate.backup
 *.tfvars
 .terraform/
-*.tfstate
-*.tfstate.backup
 *.tfvars
 

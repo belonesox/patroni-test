@@ -48,7 +48,7 @@ resource "vsphere_virtual_machine" "vm" {
   disk {
     label = "disk0"
 
-    size = "120"
+    size = "200"
 
     #size             = "${data.vsphere_virtual_machine.template.disks.0.size}"
     eagerly_scrub    = "${data.vsphere_virtual_machine.template.disks.0.eagerly_scrub}"
@@ -63,6 +63,12 @@ resource "vsphere_virtual_machine" "vm" {
   provisioner "remote-exec" {
     inline = [
       "echo password | sudo -S hostnamectl set-hostname ${self.name}",
+      "parted -s /dev/sda mkpart primary ext2  32.2GB 100%",
+      "parted -s /dev/sda set 3 lvm on",
+      "pvcreate /dev/sda3",
+      "vgextend centos /dev/sda3",
+      "lvextend -l 100%FREE /dev/centos/root",
+      "xfs_growfs /dev/mapper/centos-root",
       "reboot",
     ]
 

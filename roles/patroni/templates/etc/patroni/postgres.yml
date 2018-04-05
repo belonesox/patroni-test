@@ -12,8 +12,9 @@ restapi:
 
 bootstrap: 
   dcs:
-    ttl: 30
+    ttl: 60
     loop_wait: 10
+    retry_timeout: 25
     maximum_lag_on_failover: 10485760 # 1 megabyte in bytes
     postgresql:
       use_pg_rewind: true
